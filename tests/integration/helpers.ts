@@ -11,7 +11,7 @@ export function setupDemoEnvironment(overrides: Record<string, string> = {}): vo
       key.startsWith("NEXT_PUBLIC_SUPABASE") ||
       [
         "SUPABASE_SERVICE_ROLE_KEY",
-        "ANTHROPIC_API_KEY",
+        "DEEPSEEK_API_KEY",
         "TAVILY_API_KEY",
         "DEMO_MODE",
         "SEARCH_PROVIDER",

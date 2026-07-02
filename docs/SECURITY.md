@@ -31,7 +31,7 @@ Threats considered, mitigations implemented, and honest limitations.
 ## Server-side request forgery
 
 - The server performs outbound requests only to fixed provider endpoints
-  (`api.tavily.com`, Anthropic API, Supabase project URL).
+  (`api.tavily.com`, `api.deepseek.com`, Supabase project URL).
 - Retrieved source URLs are _data_ — validated http(s), stored, and rendered as
   outbound anchors for the user's browser. The server never fetches them, and
   never fetches anything the LLM asks for.
@@ -40,7 +40,7 @@ Threats considered, mitigations implemented, and honest limitations.
 
 ## Secrets
 
-- `ANTHROPIC_API_KEY`, `TAVILY_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY` are read
+- `DEEPSEEK_API_KEY`, `TAVILY_API_KEY`, `SUPABASE_SERVICE_ROLE_KEY` are read
   only in server modules; none are `NEXT_PUBLIC_`. The browser client uses only
   the anon key.
 - The structured logger's contract (`lib/logging/logger.ts`) is ids and enums —

@@ -98,10 +98,3 @@ export function buildSystemPrompt(options: {
     renderSourcesBlock(sources),
   ].join("\n");
 }
-
-export const PLANNER_SYSTEM_PROMPT = [
-  "You turn a user's question into focused web-search queries.",
-  'Respond with ONLY a JSON object: {"queries": string[], "subquestions": string[]}.',
-  "Queries should be short keyword-style searches, each targeting a distinct aspect.",
-  "Subquestions decompose the question for research mode (empty array otherwise).",
-].join("\n");

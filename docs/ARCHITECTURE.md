@@ -18,7 +18,7 @@ Request (POST /api/search, SSE)
             ├─ searching      SearchProvider.search      (tavily | mock, timeout+retry)
             ├─ research loop  bounded by env + mode config, gap heuristic
             ├─ pipeline       lib/retrieval/pipeline.ts  (pure)
-            ├─ generation     AnswerProvider.streamAnswer (anthropic | mock)
+            ├─ generation     AnswerProvider.streamAnswer (deepseek | mock)
             ├─ citations      lib/citations/*            (validate + one repair pass)
             └─ persistence    lib/db/* (DataStore: supabase | memory)
 ```
@@ -84,7 +84,7 @@ without one is surfaced to the user as a disconnect with retry.
 `lib/orchestrator/history.ts`: always keep the thread's original question, keep
 the last 6 completed messages verbatim (truncated per message), compress the
 middle into a deterministic one-line-per-turn summary, and merge consecutive
-roles to satisfy the Messages API. Up to 4 of the previous answer's sources are
+roles to satisfy the chat-completions API. Up to 4 of the previous answer's sources are
 carried into the new retrieval pass and re-ranked alongside fresh results.
 
 ## Data model
@@ -108,7 +108,7 @@ app/                    routes (server components + route handlers)
 components/             answer/ citations-adjacent UI, layout, library,
                         search, settings, sources, spaces, thread, ui
 lib/
-  ai/                   providers (anthropic, mock), prompts, planner types
+  ai/                   providers (deepseek, mock), prompts, planner
   api/                  response helpers, error codes → HTTP status
   auth/                 identity resolution, supabase clients
   citations/            extract, validate/repair, linkify, bibtex

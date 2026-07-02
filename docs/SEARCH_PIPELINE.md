@@ -22,7 +22,7 @@ tested) or `lib/orchestrator/` (async, bounded, cancellable).
    | News     | ≤3              | 8/query    | 4–8     | 3 d            | no        |
 
 3. **Query planning** — the answer provider doubles as `QueryPlanner`. Live:
-   one small Anthropic completion returning strict JSON
+   one small DeepSeek completion returning strict JSON
    (`{queries, subquestions}`), validated and capped; any failure falls back to
    the raw question. Demo/mock: deterministic heuristics.
 

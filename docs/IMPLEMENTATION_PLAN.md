@@ -8,7 +8,7 @@ card. Threads persist, support follow-ups, and can be organized into workspaces.
 ## Environment findings
 
 - Fresh, empty git repository on branch `claude/deepfind-ai-engine-fizizf`.
-- Node 22, npm 10. No Supabase project, Anthropic key, or Tavily key available in
+- Node 22, npm 10. No Supabase project, LLM key, or Tavily key available in
   this environment — live-mode code paths are implemented and typed, but local
   verification (unit, integration, e2e) runs against **demo mode** and the mock
   providers, exactly as the spec's testing rules require.
@@ -21,7 +21,7 @@ card. Threads persist, support follow-ups, and can be organized into workspaces.
 | Styling    | Tailwind CSS 4, custom design tokens, Radix UI primitives  |
 | Data       | Supabase Postgres + RLS; in-memory store when unconfigured |
 | Auth       | Supabase (magic link + Google); demo sign-in in demo mode  |
-| LLM        | @anthropic-ai/sdk (streaming Messages API)                 |
+| LLM        | DeepSeek chat-completions API (OpenAI-compatible)          |
 | Search     | Tavily REST API behind a `SearchProvider` interface        |
 | Validation | Zod 4                                                      |
 | Rendering  | react-markdown + remark-gfm (no raw HTML, sanitized links) |
@@ -40,7 +40,7 @@ Browser ── POST /api/search (SSE) ──► orchestrator
                                         ├─ SearchProvider (tavily | mock)
                                         ├─ retrieval pipeline: normalize → canonicalize
                                         │    → dedupe → filter → score → select
-                                        ├─ AnswerProvider (anthropic | mock) streams tokens
+                                        ├─ AnswerProvider (deepseek | mock) streams tokens
                                         ├─ citation validation (+ one repair pass)
                                         └─ DataStore (supabase | memory) persists
                                              thread / messages / search_run / sources
@@ -61,7 +61,7 @@ Key abstractions:
    electric amber, grid texture), ESLint/Prettier/Vitest/Playwright config, Zod-validated
    env with fail-fast startup, demo-mode flag and badge.
 2. **Retrieval + citation engine** — provider interfaces and implementations
-   (tavily, anthropic, mocks), pipeline modules, citation extract/validate/repair,
+   (tavily, deepseek, mocks), pipeline modules, citation extract/validate/repair,
    streaming protocol, rate limiting, share tokens; unit tests for each module.
 3. **Search experience** — landing page (composer, modes, suggestions), thread page
    (streamed markdown, citation chips ↔ source cards, activity panel, follow-ups,

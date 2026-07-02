@@ -1,5 +1,5 @@
 import { getEnv } from "@/lib/config/env";
-import { AnthropicAnswerProvider } from "./anthropic";
+import { DeepSeekAnswerProvider } from "./deepseek";
 import { MockAnswerProvider } from "./mock";
 import type { AnswerProvider, QueryPlanner } from "./provider";
 
@@ -9,12 +9,12 @@ let cached: (AnswerProvider & QueryPlanner) | null = null;
 export function getAnswerProvider(): AnswerProvider & QueryPlanner {
   if (cached) return cached;
   const env = getEnv();
-  if (env.DEMO_MODE || !env.ANTHROPIC_API_KEY) {
+  if (env.DEMO_MODE || !env.DEEPSEEK_API_KEY) {
     cached = new MockAnswerProvider();
   } else {
-    cached = new AnthropicAnswerProvider({
-      apiKey: env.ANTHROPIC_API_KEY,
-      model: env.ANTHROPIC_MODEL,
+    cached = new DeepSeekAnswerProvider({
+      apiKey: env.DEEPSEEK_API_KEY,
+      model: env.DEEPSEEK_MODEL,
     });
   }
   return cached;

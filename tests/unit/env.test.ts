@@ -12,17 +12,17 @@ describe("parseEnv", () => {
     expect(env.SEARCH_TIMEOUT_MS).toBe(15_000);
   });
 
-  it("requires ANTHROPIC_API_KEY outside demo mode", () => {
+  it("requires DEEPSEEK_API_KEY outside demo mode", () => {
     expect(() => parseEnv({ TAVILY_API_KEY: "t" })).toThrow(ConfigError);
-    expect(() => parseEnv({ TAVILY_API_KEY: "t" })).toThrow(/ANTHROPIC_API_KEY/);
+    expect(() => parseEnv({ TAVILY_API_KEY: "t" })).toThrow(/DEEPSEEK_API_KEY/);
   });
 
   it("requires TAVILY_API_KEY when the tavily provider is active", () => {
-    expect(() => parseEnv({ ANTHROPIC_API_KEY: "a" })).toThrow(/TAVILY_API_KEY/);
+    expect(() => parseEnv({ DEEPSEEK_API_KEY: "a" })).toThrow(/TAVILY_API_KEY/);
   });
 
   it("allows the mock search provider without a Tavily key", () => {
-    const env = parseEnv({ ANTHROPIC_API_KEY: "a", SEARCH_PROVIDER: "mock" });
+    const env = parseEnv({ DEEPSEEK_API_KEY: "a", SEARCH_PROVIDER: "mock" });
     expect(env.SEARCH_PROVIDER).toBe("mock");
   });
 

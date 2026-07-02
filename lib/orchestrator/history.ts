@@ -53,7 +53,7 @@ export function buildHistory(messages: MessageRecord[]): ConversationTurn[] {
     });
   }
 
-  // Anthropic requires alternating roles starting with "user"; merge
+  // Chat APIs expect alternating roles starting with "user"; merge
   // consecutive same-role turns defensively.
   const merged: ConversationTurn[] = [];
   for (const turn of turns) {

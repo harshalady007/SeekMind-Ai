@@ -34,8 +34,8 @@ const envSchema = z
     NEXT_PUBLIC_SUPABASE_URL: z.string().url().optional().or(z.literal("")),
     NEXT_PUBLIC_SUPABASE_ANON_KEY: z.string().optional(),
     SUPABASE_SERVICE_ROLE_KEY: z.string().optional(),
-    ANTHROPIC_API_KEY: z.string().optional(),
-    ANTHROPIC_MODEL: z.string().optional().default("claude-sonnet-5"),
+    DEEPSEEK_API_KEY: z.string().optional(),
+    DEEPSEEK_MODEL: z.string().optional().default("deepseek-chat"),
     TAVILY_API_KEY: z.string().optional(),
     SEARCH_PROVIDER: z.enum(["tavily", "mock"]).optional().default("tavily"),
     DEMO_MODE: booleanString,
@@ -49,10 +49,10 @@ const envSchema = z
   })
   .superRefine((env, ctx) => {
     if (!env.DEMO_MODE) {
-      if (!env.ANTHROPIC_API_KEY) {
+      if (!env.DEEPSEEK_API_KEY) {
         ctx.addIssue({
           code: "custom",
-          path: ["ANTHROPIC_API_KEY"],
+          path: ["DEEPSEEK_API_KEY"],
           message: "required when DEMO_MODE is not enabled",
         });
       }

@@ -1,6 +1,7 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { MockAnswerProvider } from "@/lib/ai/mock";
-import { parsePlan } from "@/lib/ai/anthropic";
+import { parsePlan } from "@/lib/ai/planner";
+import { DeepSeekAnswerProvider } from "@/lib/ai/deepseek";
 import { buildSystemPrompt } from "@/lib/ai/prompts";
 import type { AnswerEvent, AnswerRequest } from "@/lib/ai/provider";
 import type { RankedSource } from "@/lib/core/types";
@@ -354,5 +355,142 @@ describe("follow-up history strategy", () => {
     ]);
     expect(history).toHaveLength(1);
     expect(history[0]?.role).toBe("user");
+  });
+});
+
+describe("DeepSeekAnswerProvider (stubbed fetch)", () => {
+  afterEach(() => vi.unstubAllGlobals());
+
+  const makeProvider = () =>
+    new DeepSeekAnswerProvider({ apiKey: "ds-test-key", model: "deepseek-chat" });
+
+  const request: AnswerRequest = {
+    question: "What do the sources say?",
+    mode: "quick",
+    answerLength: "balanced",
+    sources: [makeSource(1), makeSource(2)],
+    history: [
+      { role: "user", content: "earlier" },
+      { role: "assistant", content: "reply" },
+    ],
+  };
+
+  function sseResponse(frames: string[]): Response {
+    const encoder = new TextEncoder();
+    const stream = new ReadableStream<Uint8Array>({
+      start(controller) {
+        for (const frame of frames) controller.enqueue(encoder.encode(frame));
+        controller.close();
+      },
+    });
+    return new Response(stream, {
+      status: 200,
+      headers: { "Content-Type": "text/event-stream" },
+    });
+  }
+
+  it("streams tokens and reports usage from the final chunk", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () =>
+        sseResponse([
+          'data: {"model":"deepseek-chat","choices":[{"delta":{"content":"Hello "}}]}\n\n',
+          'data: {"choices":[{"delta":{"content":"world [1]."}}]}\n\ndata: {"choices"',
+          ':[{"delta":{}}],"usage":{"prompt_tokens":120,"completion_tokens":25}}\n\n',
+          "data: [DONE]\n\n",
+        ]),
+      ),
+    );
+    const events: AnswerEvent[] = [];
+    for await (const event of makeProvider().streamAnswer(request)) events.push(event);
+
+    const text = events
+      .filter((e): e is Extract<AnswerEvent, { type: "token" }> => e.type === "token")
+      .map((e) => e.text)
+      .join("");
+    expect(text).toBe("Hello world [1].");
+    const done = events[events.length - 1];
+    expect(done).toMatchObject({
+      type: "done",
+      model: "deepseek-chat",
+      usage: { inputTokens: 120, outputTokens: 25 },
+    });
+
+    // Request shape: system prompt first, question last, streaming with usage.
+    const body = JSON.parse(
+      (vi.mocked(fetch).mock.calls[0]?.[1] as RequestInit).body as string,
+    );
+    expect(body.stream).toBe(true);
+    expect(body.stream_options).toEqual({ include_usage: true });
+    expect(body.messages[0].role).toBe("system");
+    expect(body.messages[0].content).toContain("ids: 1, 2");
+    expect(body.messages.at(-1)).toEqual({
+      role: "user",
+      content: "What do the sources say?",
+    });
+  });
+
+  it("maps auth and rate-limit statuses to typed provider errors", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("{}", { status: 401 })),
+    );
+    await expect(async () => {
+      for await (const _ of makeProvider().streamAnswer(request)) void _;
+    }).rejects.toMatchObject({ kind: "auth", retryable: false });
+
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("{}", { status: 429 })),
+    );
+    await expect(async () => {
+      for await (const _ of makeProvider().streamAnswer(request)) void _;
+    }).rejects.toMatchObject({ kind: "rate_limited" });
+  });
+
+  it("plans queries via a non-streamed completion with JSON output", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(
+        async () =>
+          new Response(
+            JSON.stringify({
+              choices: [
+                {
+                  message: {
+                    content:
+                      '{"queries":["battery yield","battery cost"],"subquestions":[]}',
+                  },
+                },
+              ],
+            }),
+            { status: 200 },
+          ),
+      ),
+    );
+    const plan = await makeProvider().planQueries("battery question", "quick", 3);
+    expect(plan.queries).toEqual(["battery yield", "battery cost"]);
+  });
+
+  it("falls back to the raw question when planning fails", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("{}", { status: 500 })),
+    );
+    const plan = await makeProvider().planQueries("fallback q", "quick", 3);
+    expect(plan.queries).toEqual(["fallback q"]);
+  });
+
+  it("never leaks the API key in errors", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => new Response("{}", { status: 400 })),
+    );
+    try {
+      for await (const _ of makeProvider().streamAnswer(request)) void _;
+      expect.unreachable();
+    } catch (err) {
+      expect((err as Error).message).not.toContain("ds-test-key");
+    }
   });
 });

@@ -58,7 +58,7 @@ flowchart TB
     end
     subgraph Providers
         TAV[Tavily SearchProvider]
-        ANT[Anthropic AnswerProvider]
+        DS[DeepSeek AnswerProvider]
         MOCK[Mock providers<br/>demo mode + tests]
     end
     UI --> Hook --> API
@@ -66,7 +66,7 @@ flowchart TB
     API --> ORCH
     ORCH --> TAV & MOCK
     ORCH --> PIPE --> CIT
-    ORCH --> ANT
+    ORCH --> DS
     ORCH --> STORE
     STORE -->|RLS| DB[(Supabase Postgres)]
 ```
@@ -84,7 +84,7 @@ Deep dives: [docs/ARCHITECTURE.md](docs/ARCHITECTURE.md) ·
 | Language   | `typescript` (strict)                                  | 5.9                     |
 | Styling    | `tailwindcss`                                          | 4.3.x                   |
 | Primitives | `@radix-ui/react-dialog`, `-dropdown-menu`             | 1.x / 2.x               |
-| LLM        | `@anthropic-ai/sdk`                                    | 0.109.x                 |
+| LLM        | DeepSeek chat-completions API (plain fetch, no SDK)    | deepseek-chat (V3)      |
 | Data/Auth  | `@supabase/supabase-js` / `@supabase/ssr`              | 2.110.x / 0.12.x        |
 | Validation | `zod`                                                  | 4.4.x                   |
 | Rendering  | `react-markdown` + `remark-gfm`                        | 10.x / 4.x              |
@@ -114,8 +114,8 @@ coral reefs) plus a generic corpus for any other query.
 ```bash
 # .env
 DEMO_MODE=false
-ANTHROPIC_API_KEY=sk-ant-...
-ANTHROPIC_MODEL=claude-sonnet-5
+DEEPSEEK_API_KEY=sk-...
+DEEPSEEK_MODEL=deepseek-chat
 TAVILY_API_KEY=tvly-...
 SEARCH_PROVIDER=tavily
 NEXT_PUBLIC_SUPABASE_URL=https://<project>.supabase.co
@@ -183,12 +183,12 @@ they never spend API credits.
 
 ## API cost drivers
 
-| Driver                  | Where                                                                     | Control                                          |
-| ----------------------- | ------------------------------------------------------------------------- | ------------------------------------------------ |
-| Tavily searches         | 1–3 per quick search, up to `RESEARCH_MAX_QUERIES` in research mode       | mode config, daily/anon limits                   |
-| Anthropic input tokens  | source evidence block (budgeted per mode, ~14–32k chars) + capped history | `totalContextBudgetChars`, history summarization |
-| Anthropic output tokens | answer length setting (1k/2k/4k max tokens)                               | `answerLength`                                   |
-| Query planning          | one small non-streamed completion per search                              | falls back to heuristics on failure              |
+| Driver                 | Where                                                                     | Control                                          |
+| ---------------------- | ------------------------------------------------------------------------- | ------------------------------------------------ |
+| Tavily searches        | 1–3 per quick search, up to `RESEARCH_MAX_QUERIES` in research mode       | mode config, daily/anon limits                   |
+| DeepSeek input tokens  | source evidence block (budgeted per mode, ~14–32k chars) + capped history | `totalContextBudgetChars`, history summarization |
+| DeepSeek output tokens | answer length setting (1k/2k/4k max tokens)                               | `answerLength`                                   |
+| Query planning         | one small non-streamed completion per search                              | falls back to heuristics on failure              |
 
 ## Screenshots
 
@@ -216,11 +216,11 @@ Captured from the running app in demo mode:
 - **Semantic relevance** uses the search provider's relevance score (embedding
   based at Tavily) with keyword overlap as fallback — DeepFind does not run its
   own embedding model.
-- **Live-mode paths were not exercised in this environment** (no Anthropic /
-  Tavily / Supabase credentials available here). The Tavily client is tested
-  against stubbed HTTP responses (status mapping, retry, timeout, parsing), the
-  Anthropic provider follows the official SDK streaming API, and everything
-  downstream of the provider interfaces is identical in demo and live modes.
+- **Live-mode paths were not exercised in this environment** (no DeepSeek /
+  Tavily / Supabase credentials available here). Both the Tavily and DeepSeek
+  clients are tested against stubbed HTTP responses (status mapping, retry,
+  timeout, streaming parse), and everything downstream of the provider
+  interfaces is identical in demo and live modes.
 - **Theme preference** ships dark-only; the settings page states this rather
   than offering a dead control.
 - Cancellation registry is in-memory, so explicit cross-instance cancel (beyond
