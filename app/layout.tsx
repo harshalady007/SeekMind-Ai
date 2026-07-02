@@ -25,6 +25,13 @@ export const viewport: Viewport = {
   themeColor: "#101114",
 };
 
+// The shell reads runtime env (demo badge, auth mode) and the visitor's
+// identity, so nothing under the root layout is prerendered at build time.
+// This keeps env validation a *runtime* concern: a misconfigured deployment
+// builds fine and shows the friendly configuration-error page instead of
+// failing the build while prerendering /_not-found.
+export const dynamic = "force-dynamic";
+
 export default async function RootLayout({
   children,
 }: Readonly<{ children: React.ReactNode }>) {
