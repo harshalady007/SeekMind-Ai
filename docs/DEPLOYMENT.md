@@ -35,7 +35,11 @@ deployable to any Node 20+ host.
 
 ### Demo deployment (no keys)
 
-Set only `DEMO_MODE=true` (and `NEXT_PUBLIC_APP_URL`). The full product runs on
+The checked-in `vercel.json` pins `DEMO_MODE=true` and the mock search
+provider so a fresh deployment works with zero secrets. **For live mode,
+delete (or edit) `vercel.json`** and set the real keys as project
+environment variables — values in `vercel.json` would otherwise override
+the dashboard. Set only `DEMO_MODE=true` (and `NEXT_PUBLIC_APP_URL`). The full product runs on
 fixtures with an always-visible “Demo data” badge and in-memory persistence.
 Note that serverless instances each hold their own memory store — demo threads
 may not survive across instances; for a stable demo, deploy a single Node
